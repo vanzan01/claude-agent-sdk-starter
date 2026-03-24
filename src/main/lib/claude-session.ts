@@ -63,7 +63,8 @@ type AgentEventChannel =
   | 'message-stopped'
   | 'message-error'
   | 'session-updated'
-  | 'debug-message';
+  | 'debug-message'
+  | 'context-window-update';
 
 // Lazy initialization - don't call electron APIs at module load time
 let currentModelPreference: ChatModelPreference | null = null;
@@ -150,6 +151,8 @@ let sessionTerminationPromise: Promise<void> | null = null;
 let isInterruptingResponse = false;
 // Map stream index to tool ID for current message
 const streamIndexToToolId: Map<number, string> = new Map();
+// Per-step usage from the last main-chain assistant message (actual context fill)
+let lastAssistantInputTokens = 0;
 let pendingResumeSessionId: string | null = null;
 // Promise that resolves when session is ready to process messages
 let sessionReadyPromise: Promise<void> | null = null;
@@ -603,6 +606,7 @@ export async function startStreamingSession(
   isProcessing = true;
   // Clear stream index mapping for new session
   streamIndexToToolId.clear();
+  lastAssistantInputTokens = 0;
 
   // Reset transcript accumulator and processed markers for new session
   transcriptAccumulator = '';
@@ -728,6 +732,7 @@ export async function startStreamingSession(
       if (sdkMessage.type === 'stream_event') {
         // Handle streaming events
         const streamEvent = sdkMessage.event;
+
         if (streamEvent.type === 'content_block_delta') {
           if (streamEvent.delta.type === 'text_delta') {
             // Regular text delta
@@ -829,6 +834,22 @@ export async function startStreamingSession(
         // Handle complete assistant messages - extract tool results
         const assistantMessage = sdkMessage.message;
 
+        // Capture per-step usage from main-chain messages (not subagent sidechain)
+        // Each assistant message's input_tokens = full conversation context for that API call
+        if (!(sdkMessage as any).parent_tool_use_id) {
+          const stepUsage = (assistantMessage as any).usage as {
+            input_tokens?: number;
+            cache_creation_input_tokens?: number;
+            cache_read_input_tokens?: number;
+          } | undefined;
+          if (stepUsage?.input_tokens) {
+            lastAssistantInputTokens = stepUsage.input_tokens
+              + (stepUsage.cache_creation_input_tokens ?? 0)
+              + (stepUsage.cache_read_input_tokens ?? 0);
+          }
+        }
+
+
         // GLM provider: Check for reasoning_content at message level
         // Z.AI GLM may return reasoning as a top-level field on the message
         const messageWithReasoning = assistantMessage as { reasoning_content?: string };
@@ -928,6 +949,22 @@ export async function startStreamingSession(
         }
         // Don't signal completion here - agent may still be running tools
       } else if (sdkMessage.type === 'result') {
+        // Send context window info to renderer
+        // Use lastAssistantInputTokens (from the last assistant message's per-step usage)
+        // which represents the actual context fill — NOT the cumulative modelUsage totals
+        const modelUsage = (sdkMessage as any).modelUsage as Record<string, { contextWindow: number }> | undefined;
+        if (modelUsage && lastAssistantInputTokens > 0) {
+          const entries = Object.entries(modelUsage);
+          if (entries.length > 0) {
+            const [modelKey, usage] = entries[0];
+            sendAgentEvent(mainWindow, 'context-window-update', {
+              model: modelKey,
+              contextWindow: usage.contextWindow,
+              tokensUsed: lastAssistantInputTokens
+            }, sessionAppIdSnapshot);
+          }
+        }
+
         // Final result message - this is when the agent is truly done
         sendAgentEvent(mainWindow, 'message-complete', {}, sessionAppIdSnapshot);
 

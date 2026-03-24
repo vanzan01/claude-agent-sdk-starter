@@ -3,6 +3,7 @@ import type { RefObject } from 'react';
 import MessageList from '@/components/MessageList';
 import ChatInput from '@/components/ChatInput';
 import type { PendingAttachment } from '@/hooks/useChatAttachments';
+import type { ContextWindowInfo } from '@/hooks/chat/useMessageStream';
 import type { Message } from '@/types/chat';
 import type { ChatModelPreference, ModelProvider, ThinkingLevel } from '../../../shared/core';
 
@@ -31,6 +32,7 @@ interface ConversationPanelProps {
   provider: ModelProvider;
   onProviderChange: (provider: ModelProvider) => void;
   isProviderUpdating: boolean;
+  contextWindowInfo?: ContextWindowInfo | null;
 }
 
 export function ConversationPanel({
@@ -57,7 +59,8 @@ export function ConversationPanel({
   isThinkingLevelUpdating,
   provider,
   onProviderChange,
-  isProviderUpdating
+  isProviderUpdating,
+  contextWindowInfo
 }: ConversationPanelProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[var(--border-light)] bg-[var(--bg-white)] p-3 shadow-sm">
@@ -92,6 +95,7 @@ export function ConversationPanel({
           provider={provider}
           onProviderChange={onProviderChange}
           isProviderUpdating={isProviderUpdating}
+          contextWindowInfo={contextWindowInfo}
         />
       </div>
     </div>

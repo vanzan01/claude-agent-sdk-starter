@@ -414,6 +414,10 @@ export interface AgentBridge {
     appId: string,
     callback: (data: { sessionId: string; resumed: boolean }) => void
   ) => () => void;
+  onContextWindowUpdate: (
+    appId: string,
+    callback: (data: { model: string; contextWindow: number; tokensUsed: number }) => void
+  ) => () => void;
 }
 
 export interface ConfigBridge {
