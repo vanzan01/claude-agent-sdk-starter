@@ -2,21 +2,24 @@
 /**
  * Test: SDK Context Window Verification
  *
- * Validates that the SDK correctly reports 1M context window for Opus/Sonnet 4.6.
+ * Proves that our workaround for SDK bug #35214 gives 1M context window.
  *
- * Background (SDK bug #35214):
- *   The SDK's internal sM() function only returns 1M when the model string
- *   contains "[1m]". Without it, even claude-opus-4-6 falls back to 200k.
- *   The app passes model: 'opus' (short alias) to the SDK, so we must set
- *   ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-6[1m] in the env to get 1M.
+ * The SDK only reports 1M when the resolved model string contains "[1m]".
+ * Our app passes model:'opus' to the SDK. Without the env var override,
+ * the SDK resolves 'opus' → 'claude-opus-4-6' (no [1m]) → 200k context.
+ * With ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-6[1m], it resolves
+ * 'opus' → 'claude-opus-4-6[1m]' → 1M context.
  *
- * This test runs 4 scenarios and asserts expected context window values:
- *   1. 'opus' with no env override            → 200k (SDK bug baseline)
- *   2. 'opus' + ANTHROPIC_DEFAULT_OPUS_MODEL   → 1M   (our workaround)
- *   3. 'claude-opus-4-6' (no [1m] suffix)     → 200k (SDK bug baseline)
- *   4. 'claude-opus-4-6[1m]' (with suffix)    → 1M   (direct fix)
+ * This test makes ONE real SDK call using the same model alias ('opus')
+ * and env var that the Electron app uses, then asserts contextWindow === 1M.
  *
- * Run: ./resources/bun run scripts/test-context-window.ts
+ * Usage:
+ *   ./resources/bun run scripts/test-context-window.ts          # test the fix
+ *   ./resources/bun run scripts/test-context-window.ts --bug     # reproduce the bug (no env var)
+ *
+ * Exit codes:
+ *   0 = contextWindow matches expectation
+ *   1 = contextWindow does NOT match expectation
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -73,91 +76,11 @@ interface ModelUsageEntry {
   outputTokens: number;
 }
 
-interface TestCase {
-  name: string;
-  modelId: string;
-  env?: Record<string, string>;
-  expectedContextWindow: number;
-}
-
-interface TestResult {
-  name: string;
-  modelId: string;
-  resolvedModelKey: string;
-  contextWindow: number | null;
-  expected: number;
-  passed: boolean;
-  error?: string;
-}
-
-// ---------- test runner ----------
-
-async function runTestCase(tc: TestCase): Promise<TestResult> {
-  const fail = (reason: string): TestResult => ({
-    name: tc.name,
-    modelId: tc.modelId,
-    resolvedModelKey: '-',
-    contextWindow: null,
-    expected: tc.expectedContextWindow,
-    passed: false,
-    error: reason
-  });
-
-  try {
-    const q = query({
-      prompt: 'Say exactly: "ok"',
-      options: {
-        model: tc.modelId,
-        settingSources: ['project'],
-        permissionMode: 'bypassPermissions',
-        allowedTools: [],
-        executable: resolveBunExecutable(),
-        pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
-        systemPrompt: { type: 'preset', preset: 'claude_code' },
-        cwd: WORKSPACE_DIR,
-        env: tc.env,
-      }
-    });
-
-    let modelUsage: Record<string, ModelUsageEntry> | null = null;
-
-    for await (const msg of q) {
-      if (msg.type === 'result') {
-        modelUsage = (msg as any).modelUsage ?? null;
-      } else if (msg.type === 'error') {
-        return fail(String((msg as any).error));
-      }
-    }
-
-    if (!modelUsage) {
-      return fail('modelUsage was null — SDK did not return usage data');
-    }
-
-    const entries = Object.entries(modelUsage);
-    if (entries.length === 0) {
-      return fail('modelUsage was empty');
-    }
-
-    // Take the first (and typically only) entry
-    const [resolvedKey, usage] = entries[0];
-    const passed = usage.contextWindow === tc.expectedContextWindow;
-
-    return {
-      name: tc.name,
-      modelId: tc.modelId,
-      resolvedModelKey: resolvedKey,
-      contextWindow: usage.contextWindow,
-      expected: tc.expectedContextWindow,
-      passed
-    };
-  } catch (err) {
-    return fail(String(err));
-  }
-}
-
 // ---------- main ----------
 
 async function main() {
+  const bugMode = process.argv.includes('--bug');
+
   const sdkPkg = JSON.parse(
     fs.readFileSync(
       path.join(WORKSPACE_DIR, 'node_modules/@anthropic-ai/claude-agent-sdk/package.json'),
@@ -167,125 +90,115 @@ async function main() {
 
   console.log('');
   console.log('========================================');
-  console.log(' SDK Context Window Verification Test');
+  console.log(' SDK Context Window Verification');
   console.log('========================================');
   console.log(`  SDK version : ${sdkPkg.version}`);
-  console.log(`  CLI path    : ${resolveClaudeCodeCli()}`);
-  console.log(`  Bun path    : ${resolveBunExecutable()}`);
+  console.log(`  Mode        : ${bugMode ? '--bug (reproduce SDK bug, expect 200k)' : 'default (verify fix, expect 1M)'}`);
   console.log('');
 
-  const tests: TestCase[] = [
-    {
-      name: '1. opus (bare alias, no env override)',
-      modelId: 'opus',
-      expectedContextWindow: 200_000
-    },
-    {
-      name: '2. opus + ANTHROPIC_DEFAULT_OPUS_MODEL env var [OUR FIX]',
-      modelId: 'opus',
-      env: { ANTHROPIC_DEFAULT_OPUS_MODEL: 'claude-opus-4-6[1m]' },
-      expectedContextWindow: 1_000_000
-    },
-    {
-      name: '3. claude-opus-4-6 (full ID, no [1m] suffix)',
-      modelId: 'claude-opus-4-6',
-      expectedContextWindow: 200_000
-    },
-    {
-      name: '4. claude-opus-4-6[1m] (full ID with suffix)',
-      modelId: 'claude-opus-4-6[1m]',
-      expectedContextWindow: 1_000_000
-    }
-  ];
+  // Both modes pass model:'opus' — same as the Electron app.
+  // The only difference is whether the env var override is present.
+  const env: Record<string, string> | undefined = bugMode
+    ? undefined
+    : { ANTHROPIC_DEFAULT_OPUS_MODEL: 'claude-opus-4-6[1m]' };
 
-  const results: TestResult[] = [];
+  const expectedContextWindow = bugMode ? 200_000 : 1_000_000;
 
-  for (const tc of tests) {
-    console.log(`Running: ${tc.name}`);
-    const result = await runTestCase(tc);
-    results.push(result);
-
-    if (result.error) {
-      console.log(`  ERROR: ${result.error}\n`);
-    } else {
-      const icon = result.passed ? 'PASS' : 'FAIL';
-      console.log(
-        `  ${icon}: ${result.resolvedModelKey} → contextWindow=${result.contextWindow} (expected ${result.expected})\n`
-      );
-    }
-  }
-
-  // ---------- summary ----------
-
-  console.log('========================================');
-  console.log(' RESULTS');
-  console.log('========================================');
-  console.log('');
-
-  const col1 = 55;
-  const col2 = 30;
-  const col3 = 15;
-  const col4 = 15;
-  console.log(
-    'Test'.padEnd(col1) +
-    'Resolved Model'.padEnd(col2) +
-    'Context'.padEnd(col3) +
-    'Expected'.padEnd(col4) +
-    'Status'
-  );
-  console.log('-'.repeat(col1 + col2 + col3 + col4 + 6));
-
-  for (const r of results) {
-    const cw = r.contextWindow !== null ? String(r.contextWindow) : 'ERROR';
-    const status = r.error ? `ERR: ${r.error.slice(0, 30)}` : r.passed ? 'PASS' : 'FAIL';
-    console.log(
-      r.name.padEnd(col1) +
-      r.resolvedModelKey.padEnd(col2) +
-      cw.padEnd(col3) +
-      String(r.expected).padEnd(col4) +
-      status
-    );
-  }
-
-  console.log('');
-
-  // ---------- assertions ----------
-
-  const passed = results.filter((r) => r.passed).length;
-  const failed = results.filter((r) => !r.passed).length;
-
-  console.log(`${passed}/${results.length} passed, ${failed} failed`);
-  console.log('');
-
-  // The critical assertion: test 2 (our workaround) MUST pass
-  const workaroundTest = results[1];
-  if (!workaroundTest.passed) {
-    console.log('CRITICAL FAILURE: The ANTHROPIC_DEFAULT_OPUS_MODEL env var workaround');
-    console.log('did NOT produce 1M context window. The fix in buildClaudeSessionEnv()');
-    console.log('will NOT prevent early compaction.');
-    console.log('');
-    process.exit(1);
-  }
-
-  // Tests 1 and 3 are expected to fail (they document the SDK bug)
-  // Test 4 is the direct model ID fix (also should pass)
-  const directTest = results[3];
-  if (!directTest.passed) {
-    console.log('FAILURE: Passing claude-opus-4-6[1m] directly did NOT produce 1M.');
-    console.log('The SDK [1m] suffix detection may have changed.');
-    console.log('');
-    process.exit(1);
-  }
-
-  if (failed === 0) {
-    console.log('ALL TESTS PASSED');
-    console.log('');
-    console.log('Confirmed:');
-    console.log('  - SDK bug #35214 is present (tests 1,3 show 200k without workaround)');
-    console.log('  - Env var workaround works  (test 2 shows 1M with ANTHROPIC_DEFAULT_OPUS_MODEL)');
-    console.log('  - Direct [1m] suffix works  (test 4 shows 1M with claude-opus-4-6[1m])');
+  if (env) {
+    console.log(`  Env override: ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-6[1m]`);
   } else {
-    console.log('SOME TESTS FAILED — review output above');
+    console.log(`  Env override: (none — bare SDK defaults)`);
+  }
+  console.log(`  Expected    : contextWindow=${expectedContextWindow}`);
+  console.log('');
+  console.log('Running SDK query with model:"opus"...');
+
+  let modelUsage: Record<string, ModelUsageEntry> | null = null;
+
+  try {
+    const q = query({
+      prompt: 'Say exactly: "ok"',
+      options: {
+        model: 'opus',
+        settingSources: ['project'],
+        permissionMode: 'bypassPermissions',
+        allowedTools: [],
+        executable: resolveBunExecutable(),
+        pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
+        systemPrompt: { type: 'preset', preset: 'claude_code' },
+        cwd: WORKSPACE_DIR,
+        env,
+      }
+    });
+
+    for await (const msg of q) {
+      if (msg.type === 'result') {
+        modelUsage = (msg as any).modelUsage ?? null;
+      } else if (msg.type === 'error') {
+        console.error('SDK error:', (msg as any).error);
+        process.exit(1);
+      }
+    }
+  } catch (err) {
+    console.error('Query threw:', err);
+    process.exit(1);
+  }
+
+  // ---------- evaluate ----------
+
+  if (!modelUsage) {
+    console.error('FAIL: modelUsage was null — SDK did not return usage data');
+    process.exit(1);
+  }
+
+  const entries = Object.entries(modelUsage);
+  if (entries.length === 0) {
+    console.error('FAIL: modelUsage was empty');
+    process.exit(1);
+  }
+
+  const [resolvedModel, usage] = entries[0];
+  const actualContextWindow = usage.contextWindow;
+
+  console.log('');
+  console.log('----------------------------------------');
+  console.log(`  Resolved model : ${resolvedModel}`);
+  console.log(`  Context window : ${actualContextWindow}`);
+  console.log(`  Expected       : ${expectedContextWindow}`);
+  console.log('----------------------------------------');
+  console.log('');
+
+  if (actualContextWindow === expectedContextWindow) {
+    if (bugMode) {
+      console.log('PASS: SDK bug #35214 confirmed — opus without [1m] reports 200k');
+      console.log('');
+      console.log('This proves the bug exists. Now run without --bug to verify the fix:');
+      console.log('  ./resources/bun run scripts/test-context-window.ts');
+    } else {
+      console.log('PASS: Fix verified — opus with env var override reports 1M');
+      console.log('');
+      console.log('The ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-6[1m] workaround');
+      console.log('correctly gives the SDK 1M context window. Compaction will trigger');
+      console.log('at ~1M, not 200k.');
+      console.log('');
+      console.log('To confirm the bug still exists without the fix:');
+      console.log('  ./resources/bun run scripts/test-context-window.ts --bug');
+    }
+    process.exit(0);
+  } else {
+    if (bugMode) {
+      console.log(`FAIL: Expected 200k (SDK bug) but got ${actualContextWindow}`);
+      console.log('');
+      if (actualContextWindow === 1_000_000) {
+        console.log('The SDK may have fixed bug #35214. If so, the env var workaround');
+        console.log('is no longer needed (but is harmless).');
+      }
+    } else {
+      console.log(`FAIL: Expected 1M but got ${actualContextWindow}`);
+      console.log('');
+      console.log('The env var workaround did NOT produce 1M context window.');
+      console.log('Compaction will fire at ~200k. Investigate buildClaudeSessionEnv().');
+    }
     process.exit(1);
   }
 }
