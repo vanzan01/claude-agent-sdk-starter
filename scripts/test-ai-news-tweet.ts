@@ -86,7 +86,8 @@ function sleep(ms: number): Promise<void> {
 }
 
 function resolveClaudeCodeCli(): string {
-  return requireModule.resolve('@anthropic-ai/claude-agent-sdk/cli.js');
+  const sdkEntry = requireModule.resolve('@anthropic-ai/claude-agent-sdk');
+  return path.join(path.dirname(sdkEntry), 'cli.js');
 }
 
 function resolveBunExecutable(): string {

@@ -23,7 +23,7 @@
     "clean": "node scripts/clean.js"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.1.61",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.81",
     "@monaco-editor/react": "^4.7.0",
     "better-sqlite3": "^12.4.6",
     "chokidar": "^5.0.0",
@@ -31,7 +31,7 @@
     "get-port": "^7.1.0",
     "glob": "^13.0.0",
     "lucide-react": "^0.554.0",
-    "monaco-editor": "^0.55.1",
+    "monaco-editor": "^0.53.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
@@ -64,7 +64,7 @@
     "autoprefixer": "^10.4.21",
     "electron": "^39.2.3",
     "electron-builder": "^26.0.12",
-    "electron-rebuild": "^3.2.9",
+    "electron-rebuild": "^1.4.0",
     "electron-vite": "^4.0.1",
     "eslint": "^9.39.0",
     "eslint-config-prettier": "^10.1.8",

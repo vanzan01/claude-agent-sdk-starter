@@ -1,5 +1,6 @@
 import { existsSync } from 'fs';
 import { createRequire } from 'module';
+import path from 'path';
 import { query, type Query } from '@anthropic-ai/claude-agent-sdk';
 import { BrowserWindow } from 'electron';
 
@@ -94,7 +95,9 @@ export function getActiveSystemPromptAppend(): string | null {
 }
 
 function resolveClaudeCodeCli(): string {
-  const cliPath = requireModule.resolve('@anthropic-ai/claude-agent-sdk/cli.js');
+  // Resolve package directory, then join cli.js (not exported in v0.2+)
+  const sdkEntry = requireModule.resolve('@anthropic-ai/claude-agent-sdk');
+  const cliPath = path.join(path.dirname(sdkEntry), 'cli.js');
   if (cliPath.includes('app.asar')) {
     const unpackedPath = cliPath.replace('app.asar', 'app.asar.unpacked');
     if (existsSync(unpackedPath)) {
