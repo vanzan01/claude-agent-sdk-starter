@@ -3,12 +3,19 @@ import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } 
 import type { Message } from '@/types/chat';
 import { appendChunkToMessages } from '@/utils/chatMessageTransforms';
 
+export interface ContextWindowInfo {
+  model: string;
+  contextWindow: number;
+  tokensUsed: number;
+}
+
 interface UseMessageStreamProps {
   appId: string;
   setMessages: Dispatch<SetStateAction<Message[]>>;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
   isStreamingRef: MutableRefObject<boolean>;
   debugMessagesRef: MutableRefObject<string[]>;
+  setContextWindowInfo?: Dispatch<SetStateAction<ContextWindowInfo | null>>;
 }
 
 // Handles assistant message chunks, completion, stop, error, and debug logs.
@@ -17,7 +24,8 @@ export function useMessageStream({
   setMessages,
   setIsLoading,
   isStreamingRef,
-  debugMessagesRef
+  debugMessagesRef,
+  setContextWindowInfo
 }: UseMessageStreamProps) {
   useEffect(() => {
     const unsubscribeMessageChunk = window.electron.agent.onMessageChunk(appId, (chunk: string) => {
@@ -214,12 +222,24 @@ export function useMessageStream({
       }
     );
 
+    const unsubscribeContextWindow = window.electron.agent.onContextWindowUpdate(
+      appId,
+      (data) => {
+        setContextWindowInfo?.({
+          model: data.model,
+          contextWindow: data.contextWindow,
+          tokensUsed: data.tokensUsed
+        });
+      }
+    );
+
     return () => {
       unsubscribeMessageChunk();
       unsubscribeMessageComplete();
       unsubscribeMessageStopped();
       unsubscribeMessageError();
       unsubscribeDebugMessage();
+      unsubscribeContextWindow();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- stable refs/setters, only re-subscribe on appId change
   }, [appId]);

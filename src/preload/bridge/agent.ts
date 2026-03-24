@@ -228,6 +228,23 @@ export function createAgentBridge(ipcRenderer: IpcRenderer): AgentBridge {
       };
       ipcRenderer.on('agent:session-updated', listener);
       return () => ipcRenderer.removeListener('agent:session-updated', listener);
+    },
+    onContextWindowUpdate: (appId, callback) => {
+      const listener = (
+        _event: Electron.IpcRendererEvent,
+        data: {
+          appId?: string;
+          conversationId?: string;
+          model: string;
+          contextWindow: number;
+          tokensUsed: number;
+        }
+      ) => {
+        if (!data || (data.appId !== appId && data.conversationId !== appId)) return;
+        callback({ model: data.model, contextWindow: data.contextWindow, tokensUsed: data.tokensUsed });
+      };
+      ipcRenderer.on('agent:context-window-update', listener);
+      return () => ipcRenderer.removeListener('agent:context-window-update', listener);
     }
   };
 }

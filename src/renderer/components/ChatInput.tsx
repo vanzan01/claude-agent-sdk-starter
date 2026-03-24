@@ -1,10 +1,11 @@
-import { ArrowUp, Brain, Loader2, Paperclip, Square } from 'lucide-react';
+import { ArrowUp, Brain, Loader2, Paperclip, Square, Gauge } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import AttachmentPreviewList from '@/components/AttachmentPreviewList';
 
 import { THINKING_PRESETS, type ThinkingLevel } from '../../shared/core';
 import type { ChatModelPreference, ModelProvider } from '../../shared/core';
+import type { ContextWindowInfo } from '@/hooks/chat/useMessageStream';
 
 interface ChatInputProps {
   value: string;
@@ -34,6 +35,7 @@ interface ChatInputProps {
   provider: ModelProvider;
   onProviderChange: (provider: ModelProvider) => void;
   isProviderUpdating?: boolean;
+  contextWindowInfo?: ContextWindowInfo | null;
 }
 
 export default function ChatInput({
@@ -57,7 +59,8 @@ export default function ChatInput({
   isThinkingLevelUpdating = false,
   provider,
   onProviderChange,
-  isProviderUpdating = false
+  isProviderUpdating = false,
+  contextWindowInfo
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -454,6 +457,21 @@ export default function ChatInput({
                 )}
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              {contextWindowInfo && (
+                <div
+                  className="flex items-center gap-1.5 rounded-full bg-[var(--user-bubble)] px-2.5 py-1 text-xs text-[var(--text-tertiary)]"
+                  title={`${contextWindowInfo.model} — ${contextWindowInfo.tokensUsed.toLocaleString()} tokens used of ${contextWindowInfo.contextWindow.toLocaleString()} context window`}
+                >
+                  <Gauge className="h-3 w-3" />
+                  <span>
+                    {Math.round((contextWindowInfo.tokensUsed / contextWindowInfo.contextWindow) * 100)}%
+                  </span>
+                  <span className="hidden sm:inline text-[var(--text-quaternary)]">
+                    {contextWindowInfo.contextWindow === 1_000_000 ? '1M' : `${Math.round(contextWindowInfo.contextWindow / 1000)}k`}
+                  </span>
+                </div>
+              )}
             <button
               onClick={isLoading && onStopStreaming ? onStopStreaming : onSend}
               disabled={isLoading && onStopStreaming ? false : !computedCanSend || isLoading}
@@ -469,6 +487,7 @@ export default function ChatInput({
                 : <Loader2 className="h-5 w-5 animate-spin" />
               : <ArrowUp className="h-5 w-5" />}
             </button>
+            </div>
           </div>
         </div>
       </div>

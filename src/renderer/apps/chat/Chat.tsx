@@ -18,7 +18,7 @@ export default function Chat() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [chatInputHeight, setChatInputHeight] = useState(0);
   const appId = 'chat';
-  const { messages, setMessages, isLoading, setIsLoading } = useClaudeChat(appId);
+  const { messages, setMessages, isLoading, setIsLoading, contextWindowInfo } = useClaudeChat(appId);
   const messagesContainerRef = useAutoScroll(isLoading, messages);
   const { workspaceDir, provider: workspaceProvider } = useChatWorkspace({
     onWorkspaceReset: () => {
@@ -137,6 +137,7 @@ export default function Chat() {
           provider={provider}
           onProviderChange={handleProviderChange}
           isProviderUpdating={isProviderUpdating}
+          contextWindowInfo={contextWindowInfo}
         />
       </ChatLayout>
 

@@ -63,7 +63,8 @@ type AgentEventChannel =
   | 'message-stopped'
   | 'message-error'
   | 'session-updated'
-  | 'debug-message';
+  | 'debug-message'
+  | 'context-window-update';
 
 // Lazy initialization - don't call electron APIs at module load time
 let currentModelPreference: ChatModelPreference | null = null;
@@ -928,6 +929,21 @@ export async function startStreamingSession(
         }
         // Don't signal completion here - agent may still be running tools
       } else if (sdkMessage.type === 'result') {
+        // Extract modelUsage and send context window info to renderer
+        const modelUsage = (sdkMessage as any).modelUsage as Record<string, { contextWindow: number; inputTokens: number; outputTokens: number; cacheReadInputTokens?: number }> | undefined;
+        if (modelUsage) {
+          const entries = Object.entries(modelUsage);
+          if (entries.length > 0) {
+            const [modelKey, usage] = entries[0];
+            const totalTokensUsed = usage.inputTokens + usage.outputTokens + (usage.cacheReadInputTokens ?? 0);
+            sendAgentEvent(mainWindow, 'context-window-update', {
+              model: modelKey,
+              contextWindow: usage.contextWindow,
+              tokensUsed: totalTokensUsed
+            }, sessionAppIdSnapshot);
+          }
+        }
+
         // Final result message - this is when the agent is truly done
         sendAgentEvent(mainWindow, 'message-complete', {}, sessionAppIdSnapshot);
 
