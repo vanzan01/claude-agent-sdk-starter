@@ -19,7 +19,8 @@ if (process.platform === 'win32' && !process.env.CLAUDE_CODE_GIT_BASH_PATH) {
 }
 
 function resolveClaudeCodeCli(): string {
-  return requireModule.resolve('@anthropic-ai/claude-agent-sdk/cli.js');
+  const sdkEntry = requireModule.resolve('@anthropic-ai/claude-agent-sdk');
+  return path.join(path.dirname(sdkEntry), 'cli.js');
 }
 
 function resolveBunExecutable(): string {

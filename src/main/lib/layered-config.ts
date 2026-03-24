@@ -29,11 +29,11 @@ export interface ConfigSchema {
   glmBaseUrl?: string;
 
   // Model IDs per provider (allows overriding SDK defaults)
-  // Anthropic defaults: haiku, sonnet, claude-opus-4-5
+  // Anthropic defaults: haiku, sonnet, claude-opus-4-6[1m]
   anthropicModels?: {
     fast?: string; // Default: 'haiku'
     smart?: string; // Default: 'sonnet'
-    deep?: string; // Default: 'claude-opus-4-5'
+    deep?: string; // Default: 'claude-opus-4-6[1m]'
   };
   // GLM defaults: GLM-4.5-Air, GLM-4.6, GLM-4.6
   glmModels?: {

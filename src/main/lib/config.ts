@@ -466,7 +466,7 @@ export async function setGlmBaseUrl(baseUrl: string | null): Promise<void> {
 export const DEFAULT_ANTHROPIC_MODELS = {
   fast: 'haiku',
   smart: 'sonnet',
-  deep: 'claude-opus-4-5'
+  deep: 'claude-opus-4-6[1m]'
 } as const;
 
 export const DEFAULT_GLM_MODELS = {
@@ -852,6 +852,12 @@ export function buildClaudeSessionEnv(): Record<string, string> {
     }
     // Note: For Anthropic, we don't set ANTHROPIC_BASE_URL (uses default)
     // and we don't set ANTHROPIC_AUTH_TOKEN (not needed)
+
+    // Set model overrides if user configured custom Anthropic model IDs
+    const anthropicModels = getAnthropicModels();
+    env.ANTHROPIC_DEFAULT_HAIKU_MODEL = anthropicModels.fast;
+    env.ANTHROPIC_DEFAULT_SONNET_MODEL = anthropicModels.smart;
+    env.ANTHROPIC_DEFAULT_OPUS_MODEL = anthropicModels.deep;
   }
 
   // Set CLAUDE_CODE_GIT_BASH_PATH for Windows (required by Claude Code)
