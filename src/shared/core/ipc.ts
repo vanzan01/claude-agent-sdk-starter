@@ -85,3 +85,12 @@ export interface SetGlmConfigResponse extends SuccessResponse {
   apiKey: string | null;
   baseUrl: string;
 }
+
+export interface GetAdvisorEnabledResponse {
+  enabled: boolean;
+  source: 'default' | 'project' | 'env';
+}
+
+export interface SetAdvisorEnabledResponse extends SuccessResponse {
+  enabled: boolean;
+}

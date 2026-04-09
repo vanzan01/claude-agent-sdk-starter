@@ -48,6 +48,9 @@ export interface ConfigSchema {
   // UI Preferences
   floatingNavEnabled?: boolean;
 
+  // Advisor Tool (beta)
+  advisorEnabled?: boolean;
+
   // Per-app settings (keyed by app id)
   appSettings?: Record<string, unknown>;
 }

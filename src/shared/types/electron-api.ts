@@ -7,12 +7,14 @@
 
 import type {
   ChatModelPreference,
+  GetAdvisorEnabledResponse,
   GetChatModelPreferenceResponse,
   GetGlmConfigResponse,
   GetProviderResponse,
   ModelProvider,
   SendMessagePayload,
   SendMessageResponse,
+  SetAdvisorEnabledResponse,
   SetChatModelPreferenceResponse,
   SetGlmConfigResponse,
   SetProviderResponse
@@ -436,6 +438,8 @@ export interface ConfigBridge {
   setFloatingNav: (
     enabled: boolean
   ) => Promise<{ success: boolean; source?: ConfigSource; error?: string }>;
+  getAdvisorEnabled: () => Promise<GetAdvisorEnabledResponse>;
+  setAdvisorEnabled: (enabled: boolean) => Promise<SetAdvisorEnabledResponse>;
   getPathInfo: () => Promise<PathInfoResponse>;
   getEnvVars: () => Promise<EnvVarsResponse>;
   getDiagnosticMetadata: () => Promise<DiagnosticMetadataResponse>;

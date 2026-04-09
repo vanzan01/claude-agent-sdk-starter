@@ -54,9 +54,12 @@ export default function Chat() {
     provider,
     isProviderUpdating,
     missingSkills,
+    advisorEnabled,
+    isAdvisorUpdating,
     handleModelPreferenceChange,
     handleThinkingLevelChange,
     handleProviderChange,
+    handleAdvisorToggle,
     syncProvider
   } = useChatPreferences({
     appId,
@@ -138,6 +141,9 @@ export default function Chat() {
           onProviderChange={handleProviderChange}
           isProviderUpdating={isProviderUpdating}
           contextWindowInfo={contextWindowInfo}
+          advisorEnabled={advisorEnabled}
+          onAdvisorToggle={handleAdvisorToggle}
+          isAdvisorUpdating={isAdvisorUpdating}
         />
       </ChatLayout>
 

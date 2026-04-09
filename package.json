@@ -17,6 +17,7 @@
     "test:ai-news-tweet": "node scripts/run-bun.js run scripts/test-ai-news-tweet.ts",
     "test:bypass-auth": "node scripts/run-bun.js run scripts/test-bypass-auth.ts",
     "test:export": "node scripts/run-bun.js run scripts/test-export.ts",
+    "test:advisor-tool": "node scripts/run-bun.js run scripts/test-advisor-tool.ts",
     "test:extended-context": "node scripts/run-bun.js run scripts/test-extended-context.ts",
     "format": "prettier --experimental-cli --write .",
     "format:check": "prettier --experimental-cli --check --log-level warn .",

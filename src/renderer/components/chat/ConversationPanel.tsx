@@ -33,6 +33,9 @@ interface ConversationPanelProps {
   onProviderChange: (provider: ModelProvider) => void;
   isProviderUpdating: boolean;
   contextWindowInfo?: ContextWindowInfo | null;
+  advisorEnabled?: boolean;
+  onAdvisorToggle?: (enabled: boolean) => void;
+  isAdvisorUpdating?: boolean;
 }
 
 export function ConversationPanel({
@@ -60,7 +63,10 @@ export function ConversationPanel({
   provider,
   onProviderChange,
   isProviderUpdating,
-  contextWindowInfo
+  contextWindowInfo,
+  advisorEnabled,
+  onAdvisorToggle,
+  isAdvisorUpdating
 }: ConversationPanelProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[var(--border-light)] bg-[var(--bg-white)] p-3 shadow-sm">
@@ -96,6 +102,9 @@ export function ConversationPanel({
           onProviderChange={onProviderChange}
           isProviderUpdating={isProviderUpdating}
           contextWindowInfo={contextWindowInfo}
+          advisorEnabled={advisorEnabled}
+          onAdvisorToggle={onAdvisorToggle}
+          isAdvisorUpdating={isAdvisorUpdating}
         />
       </div>
     </div>

@@ -28,6 +28,11 @@ export function createConfigBridge(ipcRenderer: IpcRenderer): ConfigBridge {
     getFloatingNav: () => ipcRenderer.invoke('config:get-floating-nav'),
     setFloatingNav: (enabled: boolean) => ipcRenderer.invoke('config:set-floating-nav', enabled),
 
+    // Advisor tool
+    getAdvisorEnabled: () => ipcRenderer.invoke('config:get-advisor-enabled'),
+    setAdvisorEnabled: (enabled: boolean) =>
+      ipcRenderer.invoke('config:set-advisor-enabled', enabled),
+
     // Diagnostics
     getPathInfo: () => ipcRenderer.invoke('config:get-path-info'),
     getEnvVars: () => ipcRenderer.invoke('config:get-env-vars'),

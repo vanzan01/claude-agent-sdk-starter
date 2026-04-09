@@ -1,4 +1,4 @@
-import { ArrowUp, Brain, Loader2, Paperclip, Square, Gauge } from 'lucide-react';
+import { ArrowUp, Brain, Loader2, Paperclip, Square, Gauge, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import AttachmentPreviewList from '@/components/AttachmentPreviewList';
@@ -36,6 +36,9 @@ interface ChatInputProps {
   onProviderChange: (provider: ModelProvider) => void;
   isProviderUpdating?: boolean;
   contextWindowInfo?: ContextWindowInfo | null;
+  advisorEnabled?: boolean;
+  onAdvisorToggle?: (enabled: boolean) => void;
+  isAdvisorUpdating?: boolean;
 }
 
 export default function ChatInput({
@@ -60,7 +63,10 @@ export default function ChatInput({
   provider,
   onProviderChange,
   isProviderUpdating = false,
-  contextWindowInfo
+  contextWindowInfo,
+  advisorEnabled = false,
+  onAdvisorToggle,
+  isAdvisorUpdating = false
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -456,6 +462,28 @@ export default function ChatInput({
                   </div>
                 )}
               </div>
+              {/* Advisor Tool Toggle */}
+              <button
+                type="button"
+                onClick={() => onAdvisorToggle?.(!advisorEnabled)}
+                disabled={isAdvisorUpdating}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                  isAdvisorUpdating ? 'opacity-70' : ''
+                } ${
+                  advisorEnabled
+                    ? 'bg-[var(--accent-coral)] text-white shadow-sm'
+                    : 'bg-[var(--user-bubble)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+                title={
+                  advisorEnabled
+                    ? 'Advisor enabled — Opus provides planning guidance to the executor model'
+                    : 'Enable Advisor — route hard decisions to Opus for planning (beta)'
+                }
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Advisor</span>
+                {isAdvisorUpdating && <Loader2 className="h-3 w-3 animate-spin" />}
+              </button>
             </div>
             <div className="flex items-center gap-2">
               {contextWindowInfo && (

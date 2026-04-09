@@ -16,12 +16,15 @@ interface ChatPreferences {
   provider: ModelProvider;
   isProviderUpdating: boolean;
   missingSkills: string[];
+  advisorEnabled: boolean;
+  isAdvisorUpdating: boolean;
 }
 
 interface ChatPreferenceActions {
   handleModelPreferenceChange: (preference: ChatModelPreference) => Promise<void>;
   handleThinkingLevelChange: (level: ThinkingLevel) => Promise<void>;
   handleProviderChange: (provider: ModelProvider) => Promise<void>;
+  handleAdvisorToggle: (enabled: boolean) => Promise<void>;
   syncProvider: (provider: ModelProvider) => void;
 }
 
@@ -47,6 +50,8 @@ export function useChatPreferences({
   const [provider, setProvider] = useState<ModelProvider>('anthropic');
   const [isProviderUpdating, setIsProviderUpdating] = useState(false);
   const [missingSkills, setMissingSkills] = useState<string[]>([]);
+  const [advisorEnabled, setAdvisorEnabled] = useState(false);
+  const [isAdvisorUpdating, setIsAdvisorUpdating] = useState(false);
 
   // Initial loads
   useEffect(() => {
@@ -105,6 +110,21 @@ export function useChatPreferences({
       .then(({ provider: loadedProvider }) => {
         if (isMounted && loadedProvider) {
           setProvider(loadedProvider);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    window.electron.config
+      .getAdvisorEnabled()
+      .then(({ enabled }) => {
+        if (isMounted) {
+          setAdvisorEnabled(enabled);
         }
       })
       .catch(() => {});
@@ -192,6 +212,32 @@ export function useChatPreferences({
     }
   };
 
+  const handleAdvisorToggle = async (enabled: boolean) => {
+    if (enabled === advisorEnabled) return;
+
+    const previous = advisorEnabled;
+    setAdvisorEnabled(enabled);
+    setIsAdvisorUpdating(true);
+
+    try {
+      await saveCurrentConversationIfNeeded();
+
+      const response = await window.electron.config.setAdvisorEnabled(enabled);
+      if (!response.success) {
+        setAdvisorEnabled(previous);
+      } else {
+        setAdvisorEnabled(response.enabled);
+        setMessages([]);
+        setInputValue('');
+        clearPendingAttachments();
+      }
+    } catch {
+      setAdvisorEnabled(previous);
+    } finally {
+      setIsAdvisorUpdating(false);
+    }
+  };
+
   const syncProvider = useCallback((incomingProvider: ModelProvider) => {
     setProvider(incomingProvider);
   }, []);
@@ -204,9 +250,12 @@ export function useChatPreferences({
     provider,
     isProviderUpdating,
     missingSkills,
+    advisorEnabled,
+    isAdvisorUpdating,
     handleModelPreferenceChange,
     handleThinkingLevelChange,
     handleProviderChange,
+    handleAdvisorToggle,
     syncProvider
   };
 }

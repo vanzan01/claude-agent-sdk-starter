@@ -14,6 +14,8 @@ import {
   DEFAULT_GLM_MODELS,
   DEFAULT_SYSTEM_PROMPT_APPEND,
   ensureWorkspaceDir,
+  // Advisor tool
+  getAdvisorEnabledWithSource,
   // Model config
   getAnthropicModelsWithSource,
   getApiKeyStatus,
@@ -204,6 +206,28 @@ export function registerConfigHandlers(): void {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to save floating nav setting'
+      };
+    }
+  });
+
+  // Get advisor tool enabled with source info
+  ipcMain.handle('config:get-advisor-enabled', () => {
+    const result = getAdvisorEnabledWithSource();
+    return { enabled: result.value, source: result.source };
+  });
+
+  // Set advisor tool enabled (to project config)
+  ipcMain.handle('config:set-advisor-enabled', async (_event, enabled: boolean) => {
+    try {
+      await setConfigValue('advisorEnabled', enabled);
+      // Reset session so the new betas parameter takes effect
+      await resetSession();
+      return { success: true, enabled };
+    } catch (error) {
+      return {
+        success: false,
+        enabled: false,
+        error: error instanceof Error ? error.message : 'Failed to save advisor setting'
       };
     }
   });

@@ -17,6 +17,7 @@ import {
 } from './agent-output-store';
 import {
   buildClaudeSessionEnv,
+  getAdvisorEnabled,
   getChatModelPreferenceSetting,
   getDebugMode,
   getMaxThinkingTokens,
@@ -656,6 +657,14 @@ export async function startStreamingSession(
     activeSystemPromptAppend = appendPrompt;
     activeAllowedTools = allowedTools;
 
+    // Check if advisor tool is enabled (routes hard decisions to Opus)
+    const advisorEnabled = getAdvisorEnabled();
+    const betas: string[] = [];
+    if (advisorEnabled) {
+      betas.push('advisor-tool-2026-03-01');
+      console.log('[Main] Advisor tool enabled - adding beta header');
+    }
+
     console.log(`[Main] Starting new session with allowedTools: ${JSON.stringify(allowedTools)}`);
 
     querySession = query({
@@ -693,7 +702,8 @@ export async function startStreamingSession(
         cwd: getWorkspaceDir(),
         includePartialMessages: true,
         ...(agents && { agents }),
-        ...(isResumedSession && { resume: resumeSessionId! })
+        ...(isResumedSession && { resume: resumeSessionId! }),
+        ...(betas.length > 0 && { betas: betas as never })
       }
     });
 

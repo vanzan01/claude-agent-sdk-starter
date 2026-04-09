@@ -243,6 +243,25 @@ export function getFloatingNavWithSource(): ConfigValue<boolean> {
 }
 
 // ============================================================================
+// Advisor Tool
+// ============================================================================
+
+/**
+ * Gets advisor tool enabled setting with source information.
+ * Default is false (disabled).
+ */
+export function getAdvisorEnabledWithSource(): ConfigValue<boolean> {
+  return getConfigValue('advisorEnabled', false);
+}
+
+/**
+ * Gets advisor tool enabled state.
+ */
+export function getAdvisorEnabled(): boolean {
+  return getAdvisorEnabledWithSource().value;
+}
+
+// ============================================================================
 // Chat Model Preference
 // ============================================================================
 
