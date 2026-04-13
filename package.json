@@ -18,6 +18,8 @@
     "test:bypass-auth": "node scripts/run-bun.js run scripts/test-bypass-auth.ts",
     "test:export": "node scripts/run-bun.js run scripts/test-export.ts",
     "test:extended-context": "node scripts/run-bun.js run scripts/test-extended-context.ts",
+    "test:context-window": "node scripts/run-bun.js run scripts/test-context-window.ts",
+    "test:context-window:bug": "node scripts/run-bun.js run scripts/test-context-window.ts -- --bug",
     "format": "prettier --experimental-cli --write .",
     "format:check": "prettier --experimental-cli --check --log-level warn .",
     "clean": "node scripts/clean.js"

@@ -10,8 +10,10 @@ npm run build        # Production build
 ## Test Pipelines
 
 ```bash
-npm run test:ai-news-tweet   # 3-stage pipeline demo
-npm run test:bypass-auth     # SDK auth verification
+npm run test:ai-news-tweet       # 3-stage pipeline demo
+npm run test:bypass-auth         # SDK auth verification
+npm run test:context-window      # Verify 1M context window fix (SDK bug #35214)
+npm run test:context-window:bug  # Reproduce the 200k bug (no workaround)
 ```
 
 ## Project Structure

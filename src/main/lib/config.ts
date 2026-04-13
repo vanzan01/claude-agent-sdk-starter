@@ -463,7 +463,7 @@ export async function setGlmBaseUrl(baseUrl: string | null): Promise<void> {
 // ============================================================================
 
 // Models that support 1M context window — SDK bug #35214 requires [1m] suffix
-const MODELS_1M_CAPABLE = ['claude-opus-4-6', 'claude-sonnet-4-6'];
+const MODELS_1M_CAPABLE = ['claude-opus-4-6'];
 
 /**
  * Ensures the [1m] suffix is present for 1M-capable models.
@@ -477,10 +477,27 @@ function ensure1mSuffix(modelId: string): string {
   return modelId;
 }
 
-// Default model IDs for each provider
+// Map short aliases to full API model IDs.
+// The SDK CLI resolves --model <alias> via ANTHROPIC_DEFAULT_*_MODEL env vars.
+// If the env var contains an alias instead of a full model ID, the API rejects it.
+const MODEL_ALIAS_TO_FULL_ID: Record<string, string> = {
+  haiku: 'claude-haiku-4-5-20251001',
+  sonnet: 'claude-sonnet-4-6',
+  opus: 'claude-opus-4-6'
+};
+
+/**
+ * Resolves a short model alias (e.g. 'sonnet') to its full API model ID.
+ * Returns the input unchanged if it's already a full model ID.
+ */
+function resolveModelAlias(modelId: string): string {
+  return MODEL_ALIAS_TO_FULL_ID[modelId] ?? modelId;
+}
+
+// Default model IDs for each provider — use full model IDs, not aliases
 export const DEFAULT_ANTHROPIC_MODELS = {
-  fast: 'haiku',
-  smart: 'sonnet',
+  fast: 'claude-haiku-4-5-20251001',
+  smart: 'claude-sonnet-4-6',
   deep: 'claude-opus-4-6[1m]'
 } as const;
 
@@ -868,12 +885,14 @@ export function buildClaudeSessionEnv(): Record<string, string> {
     // Note: For Anthropic, we don't set ANTHROPIC_BASE_URL (uses default)
     // and we don't set ANTHROPIC_AUTH_TOKEN (not needed)
 
-    // Set model overrides for Anthropic — ensure [1m] suffix for 1M-capable models
+    // Set model overrides for Anthropic — resolve aliases and ensure [1m] suffix
+    // Short aliases ('haiku', 'sonnet', 'opus') must be resolved to full API model IDs
+    // before setting env vars, otherwise the CLI passes them to the API which rejects them.
     // SDK bug #35214: contextWindow only reports 1M when model string contains "[1m]"
     const anthropicModels = getAnthropicModels();
-    env.ANTHROPIC_DEFAULT_HAIKU_MODEL = anthropicModels.fast;
-    env.ANTHROPIC_DEFAULT_SONNET_MODEL = ensure1mSuffix(anthropicModels.smart);
-    env.ANTHROPIC_DEFAULT_OPUS_MODEL = ensure1mSuffix(anthropicModels.deep);
+    env.ANTHROPIC_DEFAULT_HAIKU_MODEL = resolveModelAlias(anthropicModels.fast);
+    env.ANTHROPIC_DEFAULT_SONNET_MODEL = ensure1mSuffix(resolveModelAlias(anthropicModels.smart));
+    env.ANTHROPIC_DEFAULT_OPUS_MODEL = ensure1mSuffix(resolveModelAlias(anthropicModels.deep));
   }
 
   // Set CLAUDE_CODE_GIT_BASH_PATH for Windows (required by Claude Code)
