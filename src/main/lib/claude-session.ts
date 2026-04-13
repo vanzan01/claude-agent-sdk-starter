@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 import { createRequire } from 'module';
 import path from 'path';
-import { query, type Query } from '@anthropic-ai/claude-agent-sdk';
+import { query, type Query, type SDKAssistantMessage, type SDKResultSuccess } from '@anthropic-ai/claude-agent-sdk';
 import { BrowserWindow } from 'electron';
 
 import type { AgentDefinition } from '../../shared/apps';
@@ -836,8 +836,8 @@ export async function startStreamingSession(
 
         // Capture per-step usage from main-chain messages (not subagent sidechain)
         // Each assistant message's input_tokens = full conversation context for that API call
-        if (!(sdkMessage as any).parent_tool_use_id) {
-          const stepUsage = (assistantMessage as any).usage as {
+        if (!(sdkMessage as SDKAssistantMessage).parent_tool_use_id) {
+          const stepUsage = assistantMessage.usage as {
             input_tokens?: number;
             cache_creation_input_tokens?: number;
             cache_read_input_tokens?: number;
@@ -952,7 +952,7 @@ export async function startStreamingSession(
         // Send context window info to renderer
         // Use lastAssistantInputTokens (from the last assistant message's per-step usage)
         // which represents the actual context fill — NOT the cumulative modelUsage totals
-        const modelUsage = (sdkMessage as any).modelUsage as Record<string, { contextWindow: number }> | undefined;
+        const modelUsage = (sdkMessage as SDKResultSuccess).modelUsage;
         if (modelUsage && lastAssistantInputTokens > 0) {
           const entries = Object.entries(modelUsage);
           if (entries.length > 0) {

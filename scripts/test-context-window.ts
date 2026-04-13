@@ -24,7 +24,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { createRequire } from 'module';
-import { query } from '@anthropic-ai/claude-agent-sdk';
+import { query, type SDKResultSuccess } from '@anthropic-ai/claude-agent-sdk';
 
 const requireModule = createRequire(import.meta.url);
 const WORKSPACE_DIR = process.cwd();
@@ -132,10 +132,10 @@ async function main() {
     });
 
     for await (const msg of q) {
-      if (msg.type === 'result') {
-        modelUsage = (msg as any).modelUsage ?? null;
-      } else if (msg.type === 'error') {
-        console.error('SDK error:', (msg as any).error);
+      if (msg.type === 'result' && msg.subtype === 'success') {
+        modelUsage = (msg as SDKResultSuccess).modelUsage ?? null;
+      } else if (msg.type === 'result' && msg.subtype === 'error') {
+        console.error('SDK error:', msg.errors);
         process.exit(1);
       }
     }
