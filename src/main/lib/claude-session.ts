@@ -377,7 +377,7 @@ export async function runSingleAgentCall(
       prompt: userPrompt,
       options: {
         model: modelId,
-        thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const } : { type: 'disabled' as const },
+        thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const, display: 'summarized' as const } : { type: 'disabled' as const },
         settingSources: ['project'],
         permissionMode: 'bypassPermissions',
         allowedTools: config.allowedTools ?? ['WebSearch', 'WebFetch'],
@@ -649,7 +649,7 @@ export async function startStreamingSession(
       prompt: messageGenerator(),
       options: {
         model: modelId,
-        thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const } : { type: 'disabled' as const },
+        thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const, display: 'summarized' as const } : { type: 'disabled' as const },
         settingSources: ['project'],
         permissionMode: 'bypassPermissions',
         allowedTools: allowedTools ?? [

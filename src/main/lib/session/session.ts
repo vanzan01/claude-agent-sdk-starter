@@ -465,7 +465,7 @@ export class Session {
         prompt: this.messageGenerator(),
         options: {
           model: modelId,
-          thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const } : { type: 'disabled' as const },
+          thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const, display: 'summarized' as const } : { type: 'disabled' as const },
           settingSources: ['project'],
           permissionMode: getCurrentPermissionMode(),
           allowedTools: [
