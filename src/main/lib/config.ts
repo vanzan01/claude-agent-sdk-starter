@@ -463,7 +463,7 @@ export async function setGlmBaseUrl(baseUrl: string | null): Promise<void> {
 // ============================================================================
 
 // Models that support 1M context window — SDK bug #35214 requires [1m] suffix
-const MODELS_1M_CAPABLE = ['claude-opus-4-7'];
+export const MODELS_1M_CAPABLE = ['claude-opus-4-7'];
 
 /**
  * Ensures the [1m] suffix is present for 1M-capable models.

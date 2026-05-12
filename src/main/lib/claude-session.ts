@@ -16,6 +16,7 @@ import {
   storeAgentOutput
 } from './agent-output-store';
 import {
+  MODELS_1M_CAPABLE,
   buildClaudeSessionEnv,
   getChatModelPreferenceSetting,
   getDebugMode,
@@ -376,7 +377,7 @@ export async function runSingleAgentCall(
       prompt: userPrompt,
       options: {
         model: modelId,
-        maxThinkingTokens,
+        thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const } : { type: 'disabled' as const },
         settingSources: ['project'],
         permissionMode: 'bypassPermissions',
         allowedTools: config.allowedTools ?? ['WebSearch', 'WebFetch'],
@@ -648,7 +649,7 @@ export async function startStreamingSession(
       prompt: messageGenerator(),
       options: {
         model: modelId,
-        maxThinkingTokens,
+        thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const } : { type: 'disabled' as const },
         settingSources: ['project'],
         permissionMode: 'bypassPermissions',
         allowedTools: allowedTools ?? [
@@ -942,9 +943,13 @@ export async function startStreamingSession(
           const entries = Object.entries(modelUsage);
           if (entries.length > 0) {
             const [modelKey, usage] = entries[0];
+            const baseModelKey = modelKey.replace('[1m]', '');
+            const resolvedContextWindow = MODELS_1M_CAPABLE.some((m) => baseModelKey.startsWith(m))
+              ? 1_000_000
+              : usage.contextWindow;
             sendAgentEvent(mainWindow, 'context-window-update', {
               model: modelKey,
-              contextWindow: usage.contextWindow,
+              contextWindow: resolvedContextWindow,
               tokensUsed: lastAssistantInputTokens
             }, sessionAppIdSnapshot);
           }
