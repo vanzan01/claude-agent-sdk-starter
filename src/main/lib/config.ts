@@ -463,7 +463,7 @@ export async function setGlmBaseUrl(baseUrl: string | null): Promise<void> {
 // ============================================================================
 
 // Models that support 1M context window — SDK bug #35214 requires [1m] suffix
-const MODELS_1M_CAPABLE = ['claude-opus-4-6'];
+const MODELS_1M_CAPABLE = ['claude-opus-4-7'];
 
 /**
  * Ensures the [1m] suffix is present for 1M-capable models.
@@ -483,7 +483,7 @@ function ensure1mSuffix(modelId: string): string {
 const MODEL_ALIAS_TO_FULL_ID: Record<string, string> = {
   haiku: 'claude-haiku-4-5-20251001',
   sonnet: 'claude-sonnet-4-6',
-  opus: 'claude-opus-4-6'
+  opus: 'claude-opus-4-7'
 };
 
 /**
@@ -498,7 +498,7 @@ function resolveModelAlias(modelId: string): string {
 export const DEFAULT_ANTHROPIC_MODELS = {
   fast: 'claude-haiku-4-5-20251001',
   smart: 'claude-sonnet-4-6',
-  deep: 'claude-opus-4-6[1m]'
+  deep: 'claude-opus-4-7[1m]'
 } as const;
 
 export const DEFAULT_GLM_MODELS = {

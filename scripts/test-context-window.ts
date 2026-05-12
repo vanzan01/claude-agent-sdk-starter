@@ -166,7 +166,7 @@ async function main() {
     : [
         {
           alias: 'opus',
-          env: { ANTHROPIC_DEFAULT_OPUS_MODEL: 'claude-opus-4-6[1m]' },
+          env: { ANTHROPIC_DEFAULT_OPUS_MODEL: 'claude-opus-4-7[1m]' },
           expectedContextWindow: 1_000_000,
           description: 'env override with [1m] — expect 1M'
         },
@@ -205,7 +205,7 @@ async function main() {
     } else {
       console.log(`PASS: All ${tests.length} models resolved correctly`);
       console.log('');
-      console.log('  opus   → claude-opus-4-6[1m]        → 1M context');
+      console.log('  opus   → claude-opus-4-7[1m]        → 1M context');
       console.log('  sonnet → claude-sonnet-4-6           → 200k context');
       console.log('  haiku  → claude-haiku-4-5-20251001   → 200k context');
     }
