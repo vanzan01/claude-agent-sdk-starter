@@ -45,11 +45,6 @@ if (process.platform === 'win32' && !process.env.CLAUDE_CODE_GIT_BASH_PATH) {
   }
 }
 
-function resolveClaudeCodeCli(): string {
-  const sdkEntry = requireModule.resolve('@anthropic-ai/claude-agent-sdk');
-  return path.join(path.dirname(sdkEntry), 'cli.js');
-}
-
 function resolveBunExecutable(): string {
   const resourceBun = path.join(
     WORKSPACE_DIR,
@@ -92,7 +87,6 @@ async function runModelTest(test: ModelTestCase): Promise<boolean> {
         permissionMode: 'bypassPermissions',
         allowedTools: [],
         executable: resolveBunExecutable(),
-        pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
         systemPrompt: { type: 'preset', preset: 'claude_code' },
         cwd: WORKSPACE_DIR,
         env: test.env,
@@ -172,7 +166,7 @@ async function main() {
     : [
         {
           alias: 'opus',
-          env: { ANTHROPIC_DEFAULT_OPUS_MODEL: 'claude-opus-4-6[1m]' },
+          env: { ANTHROPIC_DEFAULT_OPUS_MODEL: 'claude-opus-4-7[1m]' },
           expectedContextWindow: 1_000_000,
           description: 'env override with [1m] — expect 1M'
         },
@@ -211,7 +205,7 @@ async function main() {
     } else {
       console.log(`PASS: All ${tests.length} models resolved correctly`);
       console.log('');
-      console.log('  opus   → claude-opus-4-6[1m]        → 1M context');
+      console.log('  opus   → claude-opus-4-7[1m]        → 1M context');
       console.log('  sonnet → claude-sonnet-4-6           → 200k context');
       console.log('  haiku  → claude-haiku-4-5-20251001   → 200k context');
     }

@@ -463,7 +463,7 @@ export async function setGlmBaseUrl(baseUrl: string | null): Promise<void> {
 // ============================================================================
 
 // Models that support 1M context window — SDK bug #35214 requires [1m] suffix
-const MODELS_1M_CAPABLE = ['claude-opus-4-6'];
+export const MODELS_1M_CAPABLE = ['claude-opus-4-7'];
 
 /**
  * Ensures the [1m] suffix is present for 1M-capable models.
@@ -483,22 +483,30 @@ function ensure1mSuffix(modelId: string): string {
 const MODEL_ALIAS_TO_FULL_ID: Record<string, string> = {
   haiku: 'claude-haiku-4-5-20251001',
   sonnet: 'claude-sonnet-4-6',
-  opus: 'claude-opus-4-6'
+  opus: 'claude-opus-4-7'
+};
+
+// Retired model IDs that must be silently migrated to their current replacement.
+// Handles saved configs that still reference old model strings after a code upgrade.
+const MODEL_MIGRATIONS: Record<string, string> = {
+  'claude-opus-4-6': 'claude-opus-4-7',
+  'claude-opus-4-6[1m]': 'claude-opus-4-7[1m]'
 };
 
 /**
- * Resolves a short model alias (e.g. 'sonnet') to its full API model ID.
- * Returns the input unchanged if it's already a full model ID.
+ * Resolves a short model alias (e.g. 'sonnet') to its full API model ID,
+ * and migrates any retired model IDs to their current replacement.
+ * Returns the input unchanged if it's already a current full model ID.
  */
 function resolveModelAlias(modelId: string): string {
-  return MODEL_ALIAS_TO_FULL_ID[modelId] ?? modelId;
+  return MODEL_MIGRATIONS[modelId] ?? MODEL_ALIAS_TO_FULL_ID[modelId] ?? modelId;
 }
 
 // Default model IDs for each provider — use full model IDs, not aliases
 export const DEFAULT_ANTHROPIC_MODELS = {
   fast: 'claude-haiku-4-5-20251001',
   smart: 'claude-sonnet-4-6',
-  deep: 'claude-opus-4-6[1m]'
+  deep: 'claude-opus-4-7[1m]'
 } as const;
 
 export const DEFAULT_GLM_MODELS = {

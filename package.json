@@ -25,9 +25,9 @@
     "clean": "node scripts/clean.js"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.2.81",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.139",
     "@monaco-editor/react": "^4.7.0",
-    "better-sqlite3": "^12.4.6",
+    "better-sqlite3": "^12.10.0",
     "chokidar": "^5.0.0",
     "electron-updater": "^6.6.2",
     "get-port": "^7.1.0",
@@ -64,9 +64,9 @@
     "@vitejs/plugin-react": "^5.1.1",
     "archiver": "^7.0.1",
     "autoprefixer": "^10.4.21",
-    "electron": "^39.2.3",
+    "@electron/rebuild": "^4.0.0",
+    "electron": "^41.5.1",
     "electron-builder": "^26.0.12",
-    "electron-rebuild": "^1.4.0",
     "electron-vite": "^4.0.1",
     "eslint": "^9.39.0",
     "eslint-config-prettier": "^10.1.8",

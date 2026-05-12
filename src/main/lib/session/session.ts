@@ -69,18 +69,6 @@ const MODEL_BY_PREFERENCE: Record<ChatModelPreference, string> = {
   deep: DEEP_MODEL_ID
 };
 
-function resolveClaudeCodeCli(): string {
-  // Resolve package directory, then join cli.js (not exported in v0.2+)
-  const sdkEntry = requireModule.resolve('@anthropic-ai/claude-agent-sdk');
-  const cliPath = path.join(path.dirname(sdkEntry), 'cli.js');
-  if (cliPath.includes('app.asar')) {
-    const unpackedPath = cliPath.replace('app.asar', 'app.asar.unpacked');
-    if (existsSync(unpackedPath)) {
-      return unpackedPath;
-    }
-  }
-  return cliPath;
-}
 
 // Plan mode state - shared across all sessions
 type PermissionMode = 'bypassPermissions' | 'plan' | 'default' | 'acceptEdits';
@@ -477,7 +465,7 @@ export class Session {
         prompt: this.messageGenerator(),
         options: {
           model: modelId,
-          maxThinkingTokens,
+          thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const, display: 'summarized' as const } : { type: 'disabled' as const },
           settingSources: ['project'],
           permissionMode: getCurrentPermissionMode(),
           allowedTools: [
@@ -489,10 +477,9 @@ export class Session {
             'Grep',
             'WebFetch',
             'WebSearch',
-            'Skill',
             'Preview'
           ],
-          pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
+          skills: 'all',
           executable: 'bun',
           env,
           stderr: (message: string) => {

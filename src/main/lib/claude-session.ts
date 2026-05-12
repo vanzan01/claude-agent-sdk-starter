@@ -16,6 +16,7 @@ import {
   storeAgentOutput
 } from './agent-output-store';
 import {
+  MODELS_1M_CAPABLE,
   buildClaudeSessionEnv,
   getChatModelPreferenceSetting,
   getDebugMode,
@@ -93,19 +94,6 @@ export function getActiveAppId(): string {
 
 export function getActiveSystemPromptAppend(): string | null {
   return activeSystemPromptAppend;
-}
-
-function resolveClaudeCodeCli(): string {
-  // Resolve package directory, then join cli.js (not exported in v0.2+)
-  const sdkEntry = requireModule.resolve('@anthropic-ai/claude-agent-sdk');
-  const cliPath = path.join(path.dirname(sdkEntry), 'cli.js');
-  if (cliPath.includes('app.asar')) {
-    const unpackedPath = cliPath.replace('app.asar', 'app.asar.unpacked');
-    if (existsSync(unpackedPath)) {
-      return unpackedPath;
-    }
-  }
-  return cliPath;
 }
 
 // Debug counter for chunk logging
@@ -389,11 +377,10 @@ export async function runSingleAgentCall(
       prompt: userPrompt,
       options: {
         model: modelId,
-        maxThinkingTokens,
+        thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const, display: 'summarized' as const } : { type: 'disabled' as const },
         settingSources: ['project'],
         permissionMode: 'bypassPermissions',
         allowedTools: config.allowedTools ?? ['WebSearch', 'WebFetch'],
-        pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
         executable: 'bun',
         env,
         stderr: (message: string) => {
@@ -662,7 +649,7 @@ export async function startStreamingSession(
       prompt: messageGenerator(),
       options: {
         model: modelId,
-        maxThinkingTokens,
+        thinking: maxThinkingTokens > 0 ? { type: 'adaptive' as const, display: 'summarized' as const } : { type: 'disabled' as const },
         settingSources: ['project'],
         permissionMode: 'bypassPermissions',
         allowedTools: allowedTools ?? [
@@ -673,10 +660,9 @@ export async function startStreamingSession(
           'Glob',
           'Grep',
           'WebFetch',
-          'WebSearch',
-          'Skill'
+          'WebSearch'
         ],
-        pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
+        skills: 'all',
         executable: 'bun',
         env,
         stderr: (message: string) => {
@@ -957,9 +943,13 @@ export async function startStreamingSession(
           const entries = Object.entries(modelUsage);
           if (entries.length > 0) {
             const [modelKey, usage] = entries[0];
+            const baseModelKey = modelKey.replace('[1m]', '');
+            const resolvedContextWindow = MODELS_1M_CAPABLE.some((m) => baseModelKey.startsWith(m))
+              ? 1_000_000
+              : usage.contextWindow;
             sendAgentEvent(mainWindow, 'context-window-update', {
               model: modelKey,
-              contextWindow: usage.contextWindow,
+              contextWindow: resolvedContextWindow,
               tokensUsed: lastAssistantInputTokens
             }, sessionAppIdSnapshot);
           }
