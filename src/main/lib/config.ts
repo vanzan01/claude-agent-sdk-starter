@@ -486,12 +486,20 @@ const MODEL_ALIAS_TO_FULL_ID: Record<string, string> = {
   opus: 'claude-opus-4-7'
 };
 
+// Retired model IDs that must be silently migrated to their current replacement.
+// Handles saved configs that still reference old model strings after a code upgrade.
+const MODEL_MIGRATIONS: Record<string, string> = {
+  'claude-opus-4-6': 'claude-opus-4-7',
+  'claude-opus-4-6[1m]': 'claude-opus-4-7[1m]'
+};
+
 /**
- * Resolves a short model alias (e.g. 'sonnet') to its full API model ID.
- * Returns the input unchanged if it's already a full model ID.
+ * Resolves a short model alias (e.g. 'sonnet') to its full API model ID,
+ * and migrates any retired model IDs to their current replacement.
+ * Returns the input unchanged if it's already a current full model ID.
  */
 function resolveModelAlias(modelId: string): string {
-  return MODEL_ALIAS_TO_FULL_ID[modelId] ?? modelId;
+  return MODEL_MIGRATIONS[modelId] ?? MODEL_ALIAS_TO_FULL_ID[modelId] ?? modelId;
 }
 
 // Default model IDs for each provider — use full model IDs, not aliases
