@@ -75,13 +75,11 @@ export function getSkillStatus(appId: string): {
 export function getAllowedTools(appId: string): string[] {
   const skills = getSkillsForApp(appId);
 
-  // ai-news-tweet: ONLY Skill tool - forces agent to load skill first
-  // The skill's allowed-tools (WebSearch, Bash) grant access after Skill is called
+  // ai-news-tweet: no direct tools - forces agent to use a skill first.
+  // Skills are enabled via the `skills` option on query(); the skill's own tools grant access.
   if (appId === 'ai-news-tweet') {
-    return skills.length > 0 ? ['Skill'] : [];
+    return [];
   }
 
-  const baseTools = ['Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch'];
-  const skillTools = skills.length > 0 ? ['Skill'] : [];
-  return [...baseTools, ...skillTools];
+  return ['Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch'];
 }

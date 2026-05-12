@@ -169,7 +169,7 @@ export function registerChatHandlers(getMainWindow: () => BrowserWindow | null):
         });
       }
     }
-    const result = await runAgentConversation(appId, conv as AgentConversation, getMainWindow());
+    const result = await runAgentConversation(appId, conv as unknown as AgentConversation, getMainWindow());
     return attachments.length > 0 ? { ...result, attachments: saved } : result;
   });
 

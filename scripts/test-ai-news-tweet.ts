@@ -85,11 +85,6 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function resolveClaudeCodeCli(): string {
-  const sdkEntry = requireModule.resolve('@anthropic-ai/claude-agent-sdk');
-  return path.join(path.dirname(sdkEntry), 'cli.js');
-}
-
 function resolveBunExecutable(): string {
   // Try to find bun in resources/bun (like in electron app) or just use 'bun'
   const resourceBun = path.join(WORKSPACE_DIR, 'resources', process.platform === 'win32' ? 'bun.exe' : 'bun');
@@ -105,7 +100,6 @@ function getBaseQueryOptions(systemPromptAppend: string, allowedTools: string[],
     permissionMode: 'bypassPermissions' as const,
     allowedTools,
     executable: resolveBunExecutable(),
-    pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
     systemPrompt: { type: 'preset' as const, preset: 'claude_code' as const, append: systemPromptAppend },
     cwd: WORKSPACE_DIR,
     stderr: (msg: string) => {

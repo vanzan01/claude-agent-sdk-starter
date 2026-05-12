@@ -45,11 +45,6 @@ if (process.platform === 'win32' && !process.env.CLAUDE_CODE_GIT_BASH_PATH) {
   }
 }
 
-function resolveClaudeCodeCli(): string {
-  const sdkEntry = requireModule.resolve('@anthropic-ai/claude-agent-sdk');
-  return path.join(path.dirname(sdkEntry), 'cli.js');
-}
-
 function resolveBunExecutable(): string {
   const resourceBun = path.join(
     WORKSPACE_DIR,
@@ -92,7 +87,6 @@ async function runModelTest(test: ModelTestCase): Promise<boolean> {
         permissionMode: 'bypassPermissions',
         allowedTools: [],
         executable: resolveBunExecutable(),
-        pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
         systemPrompt: { type: 'preset', preset: 'claude_code' },
         cwd: WORKSPACE_DIR,
         env: test.env,

@@ -95,19 +95,6 @@ export function getActiveSystemPromptAppend(): string | null {
   return activeSystemPromptAppend;
 }
 
-function resolveClaudeCodeCli(): string {
-  // Resolve package directory, then join cli.js (not exported in v0.2+)
-  const sdkEntry = requireModule.resolve('@anthropic-ai/claude-agent-sdk');
-  const cliPath = path.join(path.dirname(sdkEntry), 'cli.js');
-  if (cliPath.includes('app.asar')) {
-    const unpackedPath = cliPath.replace('app.asar', 'app.asar.unpacked');
-    if (existsSync(unpackedPath)) {
-      return unpackedPath;
-    }
-  }
-  return cliPath;
-}
-
 // Debug counter for chunk logging
 let chunkDebugCount = 0;
 
@@ -393,7 +380,6 @@ export async function runSingleAgentCall(
         settingSources: ['project'],
         permissionMode: 'bypassPermissions',
         allowedTools: config.allowedTools ?? ['WebSearch', 'WebFetch'],
-        pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
         executable: 'bun',
         env,
         stderr: (message: string) => {
@@ -673,10 +659,9 @@ export async function startStreamingSession(
           'Glob',
           'Grep',
           'WebFetch',
-          'WebSearch',
-          'Skill'
+          'WebSearch'
         ],
-        pathToClaudeCodeExecutable: resolveClaudeCodeCli(),
+        skills: 'all',
         executable: 'bun',
         env,
         stderr: (message: string) => {
